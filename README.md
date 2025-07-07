@@ -34,3 +34,13 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+2 separate videos since loom isnt able to access both the audio and Microphone simultaneously until i upgrade my plan.
+
+Design Decisions:
+
+Livekit uses WebRTC so it is server side hence it is not a problem to scale supervisor to user connection
+LLM of Livekit is in the backend(https://github.com/HrithikSampson/livekit-backend) it listens to the events and is difficult to scale mostly due to rate limit. One solution is to use differrent servers only the database , i.e firestore will be common
+Table consists of room_name | Request Status. Supervisor can check the Pending request which is marked by the LLM as pending when it can't reply or connection is done to the supervisor
+users are given identity as {roomName}-user and supervisor are given identity {roomName}-supervisor so that the llm doesn't respond when the superisor is talking
+For now the chat Context is stored as an array for each room
