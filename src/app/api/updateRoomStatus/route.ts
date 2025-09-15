@@ -1,24 +1,29 @@
-import express from 'express';
-import { db } from '@/utils/firebase'; // adjust path
+// src/app/api/updateRoomStatus/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/utils/firebase';
 
-const router = express.Router();
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
-  const { roomName, status } = await req.json()
-
-  if (!roomName || !status) {
-    return NextResponse.json({ error: 'Missing roomName or status' },{ status: 403});
-  }
-
   try {
-    const roomRef = db.collection('rooms').doc(roomName);
-    await roomRef.update({ request: status });
+    const { roomName, status } = await req.json();
+
+    if (typeof roomName !== 'string' || roomName.trim() === '' ||
+        typeof status !== 'string' || status.trim() === '') {
+      return NextResponse.json(
+        { error: 'Missing or invalid roomName or status' },
+        { status: 400 }
+      );
+    }
+
+    await db.collection('rooms').doc(roomName).update({ request: status });
+
     return NextResponse.json({ message: 'Room status updated successfully' });
   } catch (error: any) {
     console.error('Error updating room:', error);
-    return NextResponse.json({ error: error.message || 'Internal server error' },{ status: 500});
+    return NextResponse.json(
+      { error: error?.message ?? 'Internal server error' },
+      { status: 500 }
+    );
   }
-};
-
-export default router;
+}

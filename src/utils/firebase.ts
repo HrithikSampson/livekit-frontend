@@ -1,12 +1,11 @@
 // @/utils/firebase.ts
 import admin from 'firebase-admin';
 
-const serviceAccountPath = '../../serviceAccountKey.json';
-
 if (!admin.apps.length) {
   try {
     admin.initializeApp({
-      credential: admin.credential.cert(require(serviceAccountPath)),
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      credential: admin.credential.cert(require('./../../serviceAccountKey.json')),
       databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DB_URL
     });
     console.log('Firebase Admin initialized successfully');

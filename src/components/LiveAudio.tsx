@@ -1,73 +1,66 @@
 "use client";
 import {
-    AudioTrack,
   ControlBar,
-  GridLayout,
-  ParticipantTile,
   RoomAudioRenderer,
-  RoomContext,
-  useEnsureTrackRef,
   useTracks,
   useTrackVolume,
 } from '@livekit/components-react';
 import { twMerge } from "tailwind-merge";
 
 import { motion } from 'framer-motion';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useState } from 'react';
 import { AudioWaveform, Bot } from "lucide-react";
-import { RemoteParticipant, Room, Track } from 'livekit-client';
+import { Room, Track } from 'livekit-client';
 import '@livekit/components-styles';
-import { v4 as uuidv4 } from 'uuid';
 import Image from "next/image";
   
-const serverUrl = 'wss://call-gpt-g9awkea8.livekit.cloud';
 
 
-function MyVideoConference() {
-    // `useTracks` returns all camera and screen share tracks. If a user
-    // joins without a published camera track, a placeholder track is returned.
-    const tracks = useTracks(
-      [
-        { source: Track.Source.Microphone, withPlaceholder: true },
-      ],
-      { onlySubscribed: false },
-    );
-    const trackRef = useEnsureTrackRef();
-    return (
-        <GridLayout tracks={tracks as any}>
-          {/* The GridLayout accepts zero or one child. The child is used
-          as a template to render all passed in tracks. */}
-          <ParticipantTile>
-              <AudioTrack trackRef={trackRef} />
-          </ParticipantTile>
-        </GridLayout>
-      );
-  }
+// function MyVideoConference() {
+//   // `useTracks` returns all camera and screen share tracks. If a user
+//   // joins without a published camera track, a placeholder track is returned.
+//   const tracks = useTracks(
+//     [
+//       { source: Track.Source.Microphone, withPlaceholder: true },
+//     ],
+//     { onlySubscribed: false },
+//   );
+//   const trackRef = useEnsureTrackRef();
+//   return (
+//     <GridLayout tracks={tracks as any}>
+//       {/* The GridLayout accepts zero or one child. The child is used
+//           as a template to render all passed in tracks. */}
+//       <ParticipantTile>
+//         <AudioTrack trackRef={trackRef} />
+//       </ParticipantTile>
+//     </GridLayout>
+//   );
+// }
 export default function LiveAudio({room}: {room: Room}) {
   const allMicTracks = useTracks(
     [{ source: Track.Source.Microphone, withPlaceholder: false }],
     { onlySubscribed: true }
   );
 
-const trackSupervisor = allMicTracks.find(t => t.participant.identity === `${room.name}-supervisor`);
-// const trackBot = allMicTracks.find(t => t.participant.identity === `${room.name}-bot`);
-const volumeSupervisor = useTrackVolume({ participant: trackSupervisor?.participant });
-const volumeBot = room.activeSpeakers.reduce((a,part)=>{
-  return a + (part.isAgent?part.audioLevel:0);
-},0);
+  const trackSupervisor = allMicTracks.find(t => t.participant.identity === `${room.name}-supervisor`);
+  // const trackBot = allMicTracks.find(t => t.participant.identity === `${room.name}-bot`);
+  const volumeSupervisor = useTrackVolume({ participant: trackSupervisor?.participant });
+  const volumeBot = room.activeSpeakers.reduce((a,part)=>{
+    return a + (part.isAgent?part.audioLevel:0);
+  },0);
   const [isRecording, setIsRecording] = useState(false);
   const trackVolume = room.localParticipant.audioLevel;
   
   return (
     <>
-  <div className="flex pt-10 w-full justify-center">
+      <div className="flex pt-10 w-full justify-center">
         <button className="relative block rounded-full border-8 border-amber-50" onClick={async () => {
-            if (room.state !== "connected") {
-                console.log("Room not connected");
-                return;
-            }
-            await room.localParticipant.setMicrophoneEnabled(!isRecording);
-            setIsRecording(!isRecording);
+          if (room.state !== "connected") {
+            console.log("Room not connected");
+            return;
+          }
+          await room.localParticipant.setMicrophoneEnabled(!isRecording);
+          setIsRecording(!isRecording);
         }}>
 
           <motion.div
@@ -134,6 +127,6 @@ const volumeBot = room.activeSpeakers.reduce((a,part)=>{
         {/* Controls for the user to start/stop audio, video, and screen share tracks */}
         <ControlBar controls={{microphone: true, camera: false , screenShare: false}} />
       </div>
-      </>
-      );
-    }
+    </>
+  );
+}

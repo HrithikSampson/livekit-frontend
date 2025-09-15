@@ -1,21 +1,23 @@
-
-
 "use client";
 
-
-import LiveAudio from '@/components/LiveAudio';
 import { ControlBar, RoomAudioRenderer, RoomContext } from '@livekit/components-react';
 import { Room } from 'livekit-client';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { twMerge } from 'tailwind-merge';
+
 type RoomInfo = {
   id: string;
   roomName: string;
   userId: string;
   request: "PENDING" | "RESOLVED";
+  requestor?: string | null;
+  issue?: string | null;
 };
 
 const serverUrl = "wss://call-gpt-g9awkea8.livekit.cloud";
+
+const isNonEmpty = (v: unknown): v is string =>
+  typeof v === 'string' && v.trim().length > 0;
 
 export default function SupervisorDashboard() {
   const [rooms, setRooms] = useState<RoomInfo[]>([]);
@@ -38,7 +40,6 @@ export default function SupervisorDashboard() {
       dynacast: true,
     });
     
-
     const participantName = `${roomName}-supervisor`;
 
     const tokenRes = await fetch("/api/createToken", {
@@ -69,6 +70,21 @@ export default function SupervisorDashboard() {
     const enabled = !isMicOn;
     await joinedRoom.localParticipant.setMicrophoneEnabled(enabled);
     setIsMicOn(enabled);
+  };
+
+  const getRoomDisplayInfo = (room: RoomInfo) => {
+    const hasRequestor = isNonEmpty(room.requestor);
+    const hasIssue = isNonEmpty(room.issue);
+    
+    if (hasRequestor && hasIssue) {
+      return { title: room.requestor!.trim(), subtitle: room.issue!.trim() };
+    } else if (hasRequestor) {
+      return { title: room.requestor!.trim(), subtitle: null };
+    } else if (hasIssue) {
+      return { title: room.issue!.trim(), subtitle: null };
+    } else {
+      return { title: room.roomName, subtitle: null };
+    }
   };
 
   if (joinedRoom) {
@@ -102,17 +118,29 @@ export default function SupervisorDashboard() {
         <p>No pending rooms</p>
       ) : (
         <ul className="space-y-4">
-          {rooms.map((room) => (
-            <li key={room.id} className="flex justify-between items-center bg-gray-100 p-4 rounded">
-              <span className="text-lg text-gray-800 font-serif">{room.roomName}</span>
-              <button
-                onClick={() => joinRoom(room.roomName)}
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                Join
-              </button>
-            </li>
-          ))}
+          {rooms.map((room) => {
+            const displayInfo = getRoomDisplayInfo(room);
+            return (
+              <li key={room.id} className="flex justify-between items-center bg-gray-100 p-4 rounded">
+                <div className="flex-1 text-left">
+                  <div className="text-lg text-gray-800 font-serif">
+                    {displayInfo.title}
+                  </div>
+                  {displayInfo.subtitle && (
+                    <div className="text-sm text-gray-600 mt-1">
+                      {displayInfo.subtitle}
+                    </div>
+                  )}
+                </div>
+                <button
+                  onClick={() => joinRoom(room.roomName)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ml-4"
+                >
+                  Join
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

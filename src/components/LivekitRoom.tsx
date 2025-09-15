@@ -1,48 +1,37 @@
 "use client";
 import {
-    AudioTrack,
-  ControlBar,
-  GridLayout,
-  ParticipantTile,
-  RoomAudioRenderer,
   RoomContext,
-  useEnsureTrackRef,
-  useTracks,
 } from '@livekit/components-react';
-import { twMerge } from "tailwind-merge";
 
-import { motion } from 'framer-motion';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { AudioWaveform, Bot } from "lucide-react";
-import { Room, Track } from 'livekit-client';
+import { useEffect, useState } from 'react';
+import { Room } from 'livekit-client';
 import '@livekit/components-styles';
 import { v4 as uuidv4 } from 'uuid';
-import Image from "next/image";
 import LiveAudio from './LiveAudio';
   
 const serverUrl = 'wss://call-gpt-g9awkea8.livekit.cloud';
 
 
-function MyVideoConference() {
-    // `useTracks` returns all camera and screen share tracks. If a user
-    // joins without a published camera track, a placeholder track is returned.
-    const tracks = useTracks(
-      [
-        { source: Track.Source.Microphone, withPlaceholder: true },
-      ],
-      { onlySubscribed: false },
-    );
-    const trackRef = useEnsureTrackRef();
-    return (
-      <GridLayout tracks={tracks}>
-        {/* The GridLayout accepts zero or one child. The child is used
-        as a template to render all passed in tracks. */}
-        <ParticipantTile>
-            <AudioTrack trackRef={trackRef} />
-        </ParticipantTile>
-      </GridLayout>
-    );
-  }
+// function MyVideoConference() {
+//   // `useTracks` returns all camera and screen share tracks. If a user
+//   // joins without a published camera track, a placeholder track is returned.
+//   const tracks = useTracks(
+//     [
+//       { source: Track.Source.Microphone, withPlaceholder: true },
+//     ],
+//     { onlySubscribed: false },
+//   );
+//   const trackRef = useEnsureTrackRef();
+//   return (
+//     <GridLayout tracks={tracks}>
+//       {/* The GridLayout accepts zero or one child. The child is used
+//         as a template to render all passed in tracks. */}
+//       <ParticipantTile>
+//         <AudioTrack trackRef={trackRef} />
+//       </ParticipantTile>
+//     </GridLayout>
+//   );
+// }
 export default function LivekitRoom({roomName}: {roomName?: string}) {
   const [room] = useState(() => {
     return new Room({
