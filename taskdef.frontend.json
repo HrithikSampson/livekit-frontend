@@ -1,0 +1,36 @@
+{
+  "_comment": "REQUIRED UPDATES: Replace 497816397337 with your actual AWS account ID and update execution role if needed",
+  "family": "livekit-app-frontend-taskdef",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::497816397337:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "name": "livekit-frontend",
+      "image": "497816397337.dkr.ecr.ap-south-1.amazonaws.com/livekit-frontend:latest",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/livekit-app-frontend",
+          "awslogs-region": "ap-south-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        }
+      ]
+    }
+  ]
+}
