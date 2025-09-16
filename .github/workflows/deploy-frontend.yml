@@ -67,3 +67,20 @@ jobs:
         service: ${{ env.ECS_SERVICE }}
         cluster: ${{ env.ECS_CLUSTER }}
         wait-for-service-stability: true
+        wait-timeout: 900
+
+    - name: Check ECS service status
+      run: |
+        echo "=== ECS Service Status ==="
+        aws ecs describe-services \
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --services ${{ env.ECS_SERVICE }} \
+          --region ${{ env.AWS_REGION }} \
+          --query 'services[0].{runningCount:runningCount,pendingCount:pendingCount,desiredCount:desiredCount,status:status}'
+        
+        echo "=== Recent Service Events ==="
+        aws ecs describe-services \
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --services ${{ env.ECS_SERVICE }} \
+          --region ${{ env.AWS_REGION }} \
+          --query 'services[0].events[0:3]'
