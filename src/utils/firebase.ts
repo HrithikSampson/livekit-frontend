@@ -1,20 +1,24 @@
-// @/utils/firebase.ts
 import admin from 'firebase-admin';
 
 if (!admin.apps.length) {
   try {
+    const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+      : undefined;
+
     admin.initializeApp({
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      credential: admin.credential.cert(require('./../../serviceAccountKey.json')),
-      databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DB_URL
+      credential: serviceAccount
+        ? admin.credential.cert(serviceAccount)
+        : admin.credential.applicationDefault(),
+      databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DB_URL,
     });
+
     console.log('Firebase Admin initialized successfully');
   } catch (error) {
     console.error('Firebase admin initialization error', error);
-    console.error('Make sure serviceAccountKey.json is in the correct location');
+    console.error('Check if FIREBASE_SERVICE_ACCOUNT is set correctly');
   }
 }
 
 const db = admin.firestore();
-
 export { db };
