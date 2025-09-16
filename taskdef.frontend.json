@@ -1,5 +1,4 @@
 {
-  "_comment": "REQUIRED UPDATES: Replace 497816397337 with your actual AWS account ID and update execution role if needed",
   "family": "livekit-app-frontend-taskdef",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
