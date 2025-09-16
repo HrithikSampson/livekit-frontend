@@ -55,9 +55,10 @@ jobs:
 
     - name: Debug task definition
       run: |
-        echo "${{ env.CONTAINER_NAME }}"
-        echo "${{ env.ECS_TASK_DEFINITION }}"
-        cat ${{ steps.task-def.outputs.task-definition }}
+        echo "Container name: ${{ env.CONTAINER_NAME }}"
+        echo "Task definition file: ${{ env.ECS_TASK_DEFINITION }}"
+        echo "Rendered task definition:"
+        cat ${{ steps.render-task-def.outputs.task-definition }}
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v2
