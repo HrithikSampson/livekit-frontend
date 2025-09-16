@@ -5,7 +5,15 @@ on:
   push:
     branches: [ main ]
     paths: 
-      - 'frontend/**'
+      - 'src/app/**'
+      - 'src/components/**'
+      - 'src/utils/**'
+      - 'package.json'
+      - 'next.config.ts'
+      - 'tailwind.config.js'
+      - 'postcss.config.mjs'
+      - 'eslint.config.mjs'
+      - 'Dockerfile'
       - '.github/workflows/deploy-frontend.yml'
 
 env:
@@ -32,12 +40,11 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v2
 
     - name: Build, tag, and push image to Amazon ECR
-      working-directory: ./frontend
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        # Build Docker image
+        # Build Docker image for Next.js Frontend
         docker build -t $ECR_REGISTRY/livekit-frontend:$IMAGE_TAG .
         docker build -t $ECR_REGISTRY/livekit-frontend:latest .
         
@@ -63,4 +70,4 @@ jobs:
     - name: Deployment status
       run: |
         echo "Frontend deployment completed successfully!"
-        echo "Check your application at your ALB DNS name"
+        echo "Check your Next.js application at your ALB DNS name"
