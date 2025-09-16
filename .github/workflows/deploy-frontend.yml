@@ -11,7 +11,7 @@ env:
   ECS_SERVICE: livekit-app-frontend-service
   ECS_CLUSTER: livekit-app-cluster
   ECS_TASK_DEFINITION: taskdef.frontend.json
-  CONTAINER_NAME: livekit-frontend
+  CONTAINER_NAME: frontend
 
 jobs:
   deploy:
