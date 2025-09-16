@@ -42,9 +42,8 @@ export default function LivekitRoom({roomName}: {roomName?: string}) {
   
   useEffect(() => {
     let mounted = true;
-    if(!roomName) {
-      roomName = uuidv4();
-    }
+    const currentRoomName = roomName || uuidv4();
+    
     const token = async () => {
       if(localStorage.getItem("call_gpt_token")) {
         return localStorage.getItem("call_gpt_token");
@@ -55,8 +54,8 @@ export default function LivekitRoom({roomName}: {roomName?: string}) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          participantName: `${roomName}-user`,
-          roomName: roomName,
+          participantName: `${currentRoomName}-user`,
+          roomName: currentRoomName,
         }),
       });
       const data = await response.json();
@@ -65,7 +64,7 @@ export default function LivekitRoom({roomName}: {roomName?: string}) {
     const connect = async () => {
       if (mounted) {
         await room.connect(serverUrl, await token());
-        console.log("Connected to room", roomName);
+        console.log("Connected to room", currentRoomName);
       }
     };
     connect();
@@ -74,7 +73,7 @@ export default function LivekitRoom({roomName}: {roomName?: string}) {
       mounted = false;
       room.disconnect();
     };
-  }, [room]);
+  }, [room, roomName]);
   
   return (
     <RoomContext.Provider value={room}>

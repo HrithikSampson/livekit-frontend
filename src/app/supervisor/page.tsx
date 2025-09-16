@@ -54,6 +54,11 @@ export default function SupervisorDashboard() {
 
     await room.connect(serverUrl, token);
     console.log("Supervisor connected to room", roomName);
+    
+    // Enable microphone by default for supervisor
+    await room.localParticipant.setMicrophoneEnabled(true);
+    setIsMicOn(true);
+    
     setJoinedRoom(room);
 
     await fetch("/api/updateRoomStatus", {
@@ -70,6 +75,13 @@ export default function SupervisorDashboard() {
     const enabled = !isMicOn;
     await joinedRoom.localParticipant.setMicrophoneEnabled(enabled);
     setIsMicOn(enabled);
+  };
+
+  const leaveRoom = async () => {
+    if (!joinedRoom) return;
+    await joinedRoom.disconnect();
+    setJoinedRoom(null);
+    setIsMicOn(false);
   };
 
   const getRoomDisplayInfo = (room: RoomInfo) => {
@@ -92,15 +104,23 @@ export default function SupervisorDashboard() {
       <RoomContext.Provider value={joinedRoom}>
         <div className="text-center p-10">
           <h2 className="text-xl font-bold mb-4">Supervisor Joined</h2>
-          <button
-            className={twMerge(
-              "px-6 py-2 rounded text-white font-medium",
-              isMicOn ? "bg-red-600" : "bg-green-600"
-            )}
-            onClick={toggleMic}
-          >
-            {isMicOn ? "Stop Mic" : "Start Mic"}
-          </button>
+          <div className="flex gap-4 justify-center mb-6">
+            <button
+              className={twMerge(
+                "px-6 py-2 rounded text-white font-medium",
+                isMicOn ? "bg-red-600" : "bg-green-600"
+              )}
+              onClick={toggleMic}
+            >
+              {isMicOn ? "Stop Mic" : "Start Mic"}
+            </button>
+            <button
+              className="px-6 py-2 rounded text-white font-medium bg-gray-600 hover:bg-gray-700"
+              onClick={leaveRoom}
+            >
+               Leave Room
+            </button>
+          </div>
 
           <div className="mt-10 w-full h-[300px]" data-lk-theme="default">
             <RoomAudioRenderer />
