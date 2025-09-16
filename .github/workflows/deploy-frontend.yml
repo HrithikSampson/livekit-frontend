@@ -1,31 +1,26 @@
-# .github/workflows/deploy-frontend.yml
-name: Deploy Frontend to AWS ECS
+name: Deploy Frontend to ECS
 
 on:
   push:
     branches: [ main ]
-    paths: 
-      - 'src/app/**'
-      - 'src/components/**'
-      - 'src/utils/**'
-      - 'package.json'
-      - 'next.config.ts'
-      - 'tailwind.config.js'
-      - 'postcss.config.mjs'
-      - 'eslint.config.mjs'
-      - 'Dockerfile'
-      - '.github/workflows/deploy-frontend.yml'
+  workflow_dispatch:
 
 env:
   AWS_REGION: ap-south-1
-  PROJECT_NAME: livekit-app
+  ECR_REPOSITORY: livekit-frontend
+  ECS_SERVICE: livekit-app-frontend-service
+  ECS_CLUSTER: livekit-app-cluster
+  ECS_TASK_DEFINITION: taskdef.frontend.json
+  CONTAINER_NAME: livekit-frontend
 
 jobs:
   deploy:
+    name: Deploy
     runs-on: ubuntu-latest
-    
+    environment: production
+
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
 
     - name: Configure AWS credentials
@@ -40,34 +35,28 @@ jobs:
       uses: aws-actions/amazon-ecr-login@v2
 
     - name: Build, tag, and push image to Amazon ECR
+      id: build-image
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        # Build Docker image for Next.js Frontend
-        docker build -t $ECR_REGISTRY/livekit-frontend:$IMAGE_TAG .
-        docker build -t $ECR_REGISTRY/livekit-frontend:latest .
-        
-        # Push images to ECR
-        docker push $ECR_REGISTRY/livekit-frontend:$IMAGE_TAG
-        docker push $ECR_REGISTRY/livekit-frontend:latest
+        # Build a docker container and push it to ECR so that it can be deployed to ECS.
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-    - name: Update ECS service
-      run: |
-        # Force new deployment
-        aws ecs update-service \
-          --cluster ${{ env.PROJECT_NAME }}-cluster \
-          --service ${{ env.PROJECT_NAME }}-frontend-service \
-          --force-new-deployment \
-          --region ${{ env.AWS_REGION }}
-        
-        # Wait for deployment to complete
-        aws ecs wait services-stable \
-          --cluster ${{ env.PROJECT_NAME }}-cluster \
-          --services ${{ env.PROJECT_NAME }}-frontend-service \
-          --region ${{ env.AWS_REGION }}
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: ${{ env.ECS_TASK_DEFINITION }}
+        container-name: ${{ env.CONTAINER_NAME }}
+        image: ${{ steps.build-image.outputs.image }}
 
-    - name: Deployment status
-      run: |
-        echo "Frontend deployment completed successfully!"
-        echo "Check your Next.js application at your ALB DNS name"
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: ${{ env.ECS_SERVICE }}
+        cluster: ${{ env.ECS_CLUSTER }}
+        wait-for-service-stability: true
