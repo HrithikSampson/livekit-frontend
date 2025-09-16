@@ -60,3 +60,9 @@ jobs:
         service: ${{ env.ECS_SERVICE }}
         cluster: ${{ env.ECS_CLUSTER }}
         wait-for-service-stability: true
+
+    - name: Debug task definition
+      run: |
+        echo "${{ env.CONTAINER_NAME }}"
+        echo "${{ env.ECS_TASK_DEFINITION }}"
+        cat ${{ steps.task-def.outputs.task-definition }}
