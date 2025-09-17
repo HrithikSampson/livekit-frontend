@@ -21,6 +21,14 @@
         {
           "name": "NODE_ENV",
           "value": "production"
+        },
+        {
+          "name": "NEXT_PUBLIC_LIVEKIT_API_KEY",
+          "value": "YOUR_LIVEKIT_API_KEY_HERE"
+        },
+        {
+          "name": "NEXT_PUBLIC_LIVEKIT_API_SECRET",
+          "value": "YOUR_LIVEKIT_API_SECRET_HERE"
         }
       ]
     }
