@@ -1,0 +1,52 @@
+{
+  "CallerReference": "livekit-fresh-1726551600",
+  "Comment": "LiveKit Fresh HTTPS Distribution",
+  "DefaultCacheBehavior": {
+    "TargetOriginId": "livekit-fresh-alb",
+    "ViewerProtocolPolicy": "redirect-to-https",
+    "MinTTL": 0,
+    "DefaultTTL": 0,
+    "MaxTTL": 0,
+    "ForwardedValues": {
+      "QueryString": true,
+      "Cookies": {"Forward": "all"},
+      "Headers": {
+        "Quantity": 1,
+        "Items": ["*"]
+      }
+    },
+    "TrustedSigners": {
+      "Enabled": false,
+      "Quantity": 0
+    },
+    "Compress": false,
+    "AllowedMethods": {
+      "Quantity": 7,
+      "Items": ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"],
+      "CachedMethods": {
+        "Quantity": 2,
+        "Items": ["GET", "HEAD"]
+      }
+    }
+  },
+  "Origins": {
+    "Quantity": 1,
+    "Items": [
+      {
+        "Id": "livekit-fresh-alb",
+        "DomainName": "livekit-fresh-alb-1473157470.ap-south-1.elb.amazonaws.com",
+        "CustomOriginConfig": {
+          "HTTPPort": 80,
+          "HTTPSPort": 443,
+          "OriginProtocolPolicy": "http-only",
+          "OriginSslProtocols": {
+            "Quantity": 1,
+            "Items": ["TLSv1.2"]
+          }
+        }
+      }
+    ]
+  },
+  "Enabled": true,
+  "PriceClass": "PriceClass_All"
+}

@@ -1,7 +1,10 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { AccessToken } from 'livekit-server-sdk';
 import { db } from '@/utils/firebase';
 import { RequestEnum } from '@/utils/requestEnum';
+
+export const runtime = 'nodejs';
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,8 +15,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
     }
     
-    const apiKey = process.env.NEXT_PUBLIC_LIVEKIT_API_KEY;
-    const apiSecret = process.env.NEXT_PUBLIC_LIVEKIT_API_SECRET;
+    const apiKey = process.env.LIVEKIT_API_KEY;
+    const apiSecret = process.env.LIVEKIT_API_SECRET;
 
     if (!apiKey || !apiSecret) {
       return NextResponse.json({ error: 'Missing LIVEKIT credentials' }, { status: 500 });

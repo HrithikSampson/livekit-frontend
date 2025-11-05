@@ -14,7 +14,7 @@ type RoomInfo = {
   issue?: string | null;
 };
 
-const serverUrl = "wss://call-gpt-g9awkea8.livekit.cloud";
+const serverUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL || "wss://call-gpt-g9awkea8.livekit.cloud";
 
 const isNonEmpty = (v: unknown): v is string =>
   typeof v === 'string' && v.trim().length > 0;

@@ -1,86 +1,58 @@
-name: Deploy Frontend to ECS
+name: Deploy to Google Cloud Run
 
 on:
   push:
     branches: [ main ]
-  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # REQUIRED for OIDC
 
 env:
-  AWS_REGION: ap-south-1
-  ECR_REPOSITORY: livekit-frontend
-  ECS_SERVICE: livekit-app-frontend-service
-  ECS_CLUSTER: livekit-app-cluster
-  ECS_TASK_DEFINITION: taskdef.frontend.json
-  CONTAINER_NAME: frontend
+  REGION: asia-northeast1
+  REPO: cloud-run-apps             # Artifact Registry repo name you create once
+  IMAGE: myapp
 
 jobs:
-  deploy:
-    name: Deploy
+  build-and-deploy:
     runs-on: ubuntu-latest
-    environment: production
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      # 1) OIDC auth (NO service_account_key)
+      - name: Auth to GCP (OIDC)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
 
-    - name: Login to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+      # 2) gcloud + Docker credential helper for Artifact Registry
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
 
-    - name: Build, tag, and push image to Amazon ECR
-      id: build-image
-      env:
-        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-        IMAGE_TAG: ${{ github.sha }}
-      run: |
-        # Build a docker container and push it to ECR so that it can be deployed to ECS.
-        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+      - name: Configure Docker auth for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
 
-    - name: Render Amazon ECS task definition
-      id: render-task-def
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: ${{ env.ECS_TASK_DEFINITION }}
-        container-name: ${{ env.CONTAINER_NAME }}
-        image: ${{ steps.build-image.outputs.image }}
+      # 3) Build image (no build-time secrets unless you really need compile-time constants)
+      - name: Build container
+        run: |
+          docker build \
+            -t ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ github.sha }} \
+            .
 
-    - name: Debug task definition
-      run: |
-        echo "Container name: ${{ env.CONTAINER_NAME }}"
-        echo "Task definition file: ${{ env.ECS_TASK_DEFINITION }}"
-        echo "Rendered task definition:"
-        cat ${{ steps.render-task-def.outputs.task-definition }}
+      - name: Push image
+        run: |
+          docker push ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ github.sha }}
 
-    - name: Deploy Amazon ECS task definition
-      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-      with:
-        task-definition: ${{ steps.render-task-def.outputs.task-definition }}
-        service: ${{ env.ECS_SERVICE }}
-        cluster: ${{ env.ECS_CLUSTER }}
-        wait-for-service-stability: true
-        wait-timeout: 900
-
-    - name: Check ECS service status
-      run: |
-        echo "=== ECS Service Status ==="
-        aws ecs describe-services \
-          --cluster ${{ env.ECS_CLUSTER }} \
-          --services ${{ env.ECS_SERVICE }} \
-          --region ${{ env.AWS_REGION }} \
-          --query 'services[0].{runningCount:runningCount,pendingCount:pendingCount,desiredCount:desiredCount,status:status}'
-        
-        echo "=== Recent Service Events ==="
-        aws ecs describe-services \
-          --cluster ${{ env.ECS_CLUSTER }} \
-          --services ${{ env.ECS_SERVICE }} \
-          --region ${{ env.AWS_REGION }} \
-          --query 'services[0].events[0:3]'
+      # 4) Deploy to Cloud Run (set runtime env vars here)
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ env.IMAGE }} \
+            --image ${{ env.REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ env.REPO }}/${{ env.IMAGE }}:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars "LIVEKIT_API_KEY=${{ secrets.LIVEKIT_API_KEY }},LIVEKIT_API_SECRET=${{ secrets.LIVEKIT_API_SECRET }}" \
+            --set-env-vars "NEXT_PUBLIC_LIVEKIT_URL=${{ secrets.NEXT_PUBLIC_LIVEKIT_URL }},NEXT_PUBLIC_FIREBASE_API_KEY=${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }},NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }},NEXT_PUBLIC_FIREBASE_PROJECT_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }},NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }},NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }},NEXT_PUBLIC_FIREBASE_APP_ID=${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }},NEXT_PUBLIC_FIREBASE_DB_URL=${{ secrets.NEXT_PUBLIC_FIREBASE_DB_URL }}"

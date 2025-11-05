@@ -23,12 +23,12 @@
           "value": "production"
         },
         {
-          "name": "NEXT_PUBLIC_LIVEKIT_API_KEY",
-          "value": "YOUR_LIVEKIT_API_KEY_HERE"
+          "name": "LIVEKIT_API_KEY",
+          "value": "APIb53pXag56wL9"
         },
         {
-          "name": "NEXT_PUBLIC_LIVEKIT_API_SECRET",
-          "value": "YOUR_LIVEKIT_API_SECRET_HERE"
+          "name": "LIVEKIT_API_SECRET",
+          "value": "0fLfj8f5T34hheLrl2U9IqegQXJfuxfqeMvd8SvzNDqh"
         }
       ]
     }

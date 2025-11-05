@@ -8,10 +8,9 @@ import { Room } from 'livekit-client';
 import '@livekit/components-styles';
 import { v4 as uuidv4 } from 'uuid';
 import LiveAudio from './LiveAudio';
-  
-const serverUrl = 'wss://call-gpt-g9awkea8.livekit.cloud';
 
-
+const serverUrl = process.env.NEXT_PUBLIC_LIVEKIT_URL as string;
+if (!serverUrl) throw new Error('NEXT_PUBLIC_LIVEKIT_URL missing at build time');
 // function MyVideoConference() {
 //   // `useTracks` returns all camera and screen share tracks. If a user
 //   // joins without a published camera track, a placeholder track is returned.
@@ -45,8 +44,21 @@ export default function LivekitRoom({roomName}: {roomName?: string}) {
     const currentRoomName = roomName || uuidv4();
     
     const token = async () => {
-      if(localStorage.getItem("call_gpt_token")) {
-        return localStorage.getItem("call_gpt_token");
+      // Check if we have a cached token and if it's still valid
+      const cachedToken = localStorage.getItem("call_gpt_token");
+      if (cachedToken) {
+        try {
+          // Parse JWT to check expiration
+          const payload = JSON.parse(atob(cachedToken.split('.')[1]));
+          const now = Math.floor(Date.now() / 1000);
+          if (payload.exp && payload.exp > now) {
+            return cachedToken; // Token is still valid
+          }
+        } catch (e: any) {
+          console.log('Invalid cached token, generating new one',e.message);
+        }
+        // Remove expired token
+        localStorage.removeItem("call_gpt_token");
       }
       const response = await fetch('/api/createToken', {
         method: 'POST',
